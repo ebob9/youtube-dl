@@ -2293,8 +2293,11 @@ def formatSeconds(secs):
 def make_HTTPS_handler(params, **kwargs):
     opts_no_check_certificate = params.get('nocheckcertificate', False)
     opts_tls_1_1 = params.get('tls_1_1', False)
+    print(f"TLS1.1: {opts_tls_1_1}")
     opts_tls_1_2 = params.get('tls_1_2', False)
+    print(f"TLS1.2: {opts_tls_1_2}")
     opts_tls_1_3 = params.get('tls_1_3', False)
+    print(f"TLS1.3: {opts_tls_1_3}")
 
     if hasattr(ssl, 'create_default_context'):  # Python >= 3.4 or 2.7.9
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
