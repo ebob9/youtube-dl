@@ -2292,9 +2292,9 @@ def formatSeconds(secs):
 
 def make_HTTPS_handler(params, **kwargs):
     opts_no_check_certificate = params.get('nocheckcertificate', False)
-    opts_min_tls_1_1 = params.get('min_tls_1_1', False)
-    opts_min_tls_1_2 = params.get('min_tls_1_2', False)
-    opts_min_tls_1_3 = params.get('min_tls_1_3', False)
+    opts_tls_1_1 = params.get('tls_1_1', False)
+    opts_tls_1_2 = params.get('tls_1_2', False)
+    opts_tls_1_3 = params.get('tls_1_3', False)
 
     if hasattr(ssl, 'create_default_context'):  # Python >= 3.4 or 2.7.9
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
@@ -2302,12 +2302,15 @@ def make_HTTPS_handler(params, **kwargs):
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
         # set minimum TLS version, otherwise use default context version.
-        if opts_min_tls_1_1:
+        if opts_tls_1_1:
             context.minimum_version = ssl.TLSVersion.TLSv1_1
-        elif opts_min_tls_1_2:
+            context.maximum_version = ssl.TLSVersion.TLSv1_1
+        elif opts_tls_1_2:
             context.minimum_version = ssl.TLSVersion.TLSv1_2
-        elif opts_min_tls_1_3:
+            context.maximum_version = ssl.TLSVersion.TLSv1_2
+        elif opts_tls_1_3:
             context.minimum_version = ssl.TLSVersion.TLSv1_3
+            context.maximum_version = ssl.TLSVersion.TLSv1_3
 
         try:
             return YoutubeDLHTTPSHandler(params, context=context, **kwargs)
@@ -2317,15 +2320,18 @@ def make_HTTPS_handler(params, **kwargs):
             pass
 
     if sys.version_info < (3, 2):
+        if opts_tls_1_1 or opts_tls_1_2 or opts_tls_1_3:
+            # do not support this for some reason.
+            raise ExtractorError('TLS 1.1/1.2/1.3 forced support not available for this Python version: %s' % sys.version)
         return YoutubeDLHTTPSHandler(params, **kwargs)
     else:  # Python < 3.4
-        if opts_min_tls_1_1:
+        if opts_tls_1_1:
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
-        elif opts_min_tls_1_2:
+        elif opts_tls_1_2:
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        elif opts_min_tls_1_3:
+        elif opts_tls_1_3:
             # no support in this version
-            raise ExtractorError('TLS 1.3 support not available for this version: %s' % sys.version)
+            raise ExtractorError('TLS 1.3 support not available for this Python version: %s' % sys.version)
         else:
             # original ssl context
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
