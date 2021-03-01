@@ -647,7 +647,8 @@ class InfoExtractor(object):
                 if err.code in [503, 403] and err.headers.get('Server').startswith('cloudflare'):
                     if not cfscrape_available:
                         raise ExtractorError('Cloudflare challenge found, and "cfscrape" not available. Ensure cookies'
-                                             'are being used for authentication. If cookies are being used, and '
+                                             'are being used for authentication. If cookies are being used, try raising'
+                                             'the minimum TLS version. Finally, if the '
                                              'challenge persists, installing the "cfscrape" python module and NodeJS 10'
                                              '+ may allow youtube-dl to automatically solve the challenge.',
                                              expected=True)

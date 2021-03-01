@@ -540,6 +540,18 @@ def parseOpts(overrideArguments=None):
         '--prefer-unsecure', action='store_true', dest='prefer_insecure',
         help='Use an unencrypted connection to retrieve information about the video. (Currently supported only for YouTube)')
     workarounds.add_option(
+        '--min-tls-1-1',
+        action='store_true', dest='min_tls_1_1',
+        help='Set minimum TLS version to 1.1 instead of default 1.0. (Mutually exclusive to other min tls commands)')
+    workarounds.add_option(
+        '--min-tls-1-2',
+        action='store_true', dest='min_tls_1_2',
+        help='Set minimum TLS version to 1.2 instead of default 1.0. (Mutually exclusive to other min tls commands)')
+    workarounds.add_option(
+        '--min-tls-1-3',
+        action='store_true', dest='min_tls_1_3',
+        help='Set minimum TLS version to 1.3 instead of default 1.0. (Mutually exclusive to other min tls commands)')
+    workarounds.add_option(
         '--user-agent',
         metavar='UA', dest='user_agent',
         help='Specify a custom user agent')
@@ -916,5 +928,9 @@ def parseOpts(overrideArguments=None):
                     ('Custom config', custom_conf),
                     ('Command-line args', command_line_conf)):
                 write_string('[debug] %s: %s\n' % (conf_label, repr(_hide_login_info(conf))))
+
+    # check for multiple mutually exclusive arguments min_tls
+    if [opts.min_tls_1_1, opts.min_tls_1_2, opts.min_tls_1_3].count(True) > 1:
+        parser.error("options --min-tls-1-1, --min-tls-1-2, and --min-tls-1-3 are mutually exclusive")
 
     return parser, opts, args

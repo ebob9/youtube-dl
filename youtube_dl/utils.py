@@ -2292,11 +2292,23 @@ def formatSeconds(secs):
 
 def make_HTTPS_handler(params, **kwargs):
     opts_no_check_certificate = params.get('nocheckcertificate', False)
+    opts_min_tls_1_1 = params.get('min_tls_1_1', False)
+    opts_min_tls_1_2 = params.get('min_tls_1_2', False)
+    opts_min_tls_1_3 = params.get('min_tls_1_3', False)
+
     if hasattr(ssl, 'create_default_context'):  # Python >= 3.4 or 2.7.9
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
         if opts_no_check_certificate:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
+        # set minimum TLS version, otherwise use default context version.
+        if opts_min_tls_1_1:
+            context.minimum_version = ssl.TLSVersion.TLSv1_1
+        elif opts_min_tls_1_2:
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
+        elif opts_min_tls_1_3:
+            context.minimum_version = ssl.TLSVersion.TLSv1_3
+
         try:
             return YoutubeDLHTTPSHandler(params, context=context, **kwargs)
         except TypeError:
@@ -2307,7 +2319,17 @@ def make_HTTPS_handler(params, **kwargs):
     if sys.version_info < (3, 2):
         return YoutubeDLHTTPSHandler(params, **kwargs)
     else:  # Python < 3.4
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        if opts_min_tls_1_1:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
+        elif opts_min_tls_1_2:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        elif opts_min_tls_1_3:
+            # no support in this version
+            raise ExtractorError('TLS 1.3 support not available for this version: %s' % sys.version)
+        else:
+            # original ssl context
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+
         context.verify_mode = (ssl.CERT_NONE
                                if opts_no_check_certificate
                                else ssl.CERT_REQUIRED)
