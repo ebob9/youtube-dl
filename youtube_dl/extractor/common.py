@@ -53,6 +53,7 @@ from ..utils import (
     float_or_none,
     GeoRestrictedError,
     GeoUtils,
+    HEADRequest,
     int_or_none,
     js_to_json,
     JSON_LD_RE,
@@ -67,6 +68,7 @@ from ..utils import (
     RegexNotFoundError,
     sanitized_Request,
     sanitize_filename,
+    std_headers,
     str_or_none,
     str_to_int,
     strip_or_none,
@@ -82,6 +84,12 @@ from ..utils import (
     xpath_text,
     xpath_with_ns,
 )
+# Check if cfscrape is available to handle CloudFlare browser validation requests.
+try:
+    import cfscrape
+    cfscrape_available = True
+except ImportError:
+    cfscrape_available = False
 
 
 class InfoExtractor(object):
@@ -631,6 +639,46 @@ class InfoExtractor(object):
         try:
             return self._downloader.urlopen(url_or_request)
         except tuple(exceptions) as err:
+            # Check if the error is due to a CloudFlare Browser Validation response or Captcha.
+            # if cfscrape is installed, attempt to provide browser validation.
+            # Worst case, fail with a more verbose error message that lets the end-user know it's a CloudFlare issue.
+            if isinstance(err, compat_urllib_error.HTTPError) and not isinstance(url_or_request, HEADRequest):
+                # Check if
+                if err.code in [503, 403] and err.headers.get('Server').startswith('cloudflare'):
+                    if not cfscrape_available:
+                        raise ExtractorError('Cloudflare challenge found, and "cfscrape" not available. Ensure cookies'
+                                             'are being used for authentication. If cookies are being used, and '
+                                             'challenge persists, installing the "cfscrape" python module and NodeJS 10'
+                                             '+ may allow youtube-dl to automatically solve the challenge.',
+                                             expected=True)
+
+                    else:
+                        self.to_screen('Solving Cloudflare challenge (~7s)')
+                        scraper = cfscrape.create_scraper()
+                        try:
+                            tokens = scraper.get_tokens(err.geturl(), std_headers['User-Agent'])
+                        except ValueError as e:
+                            raise ExtractorError('cfscrape error: %s' % e, expected=True)
+
+                        cookie = 'cf_clearance=' + tokens[0]['cf_clearance'] + '; __cfduid=' + tokens[0]['__cfduid']
+                        for c in self._downloader.cookiejar:
+                            if c.name != '__cfduid' and c.name != 'cf_clearance':
+                                cookie += '; %s=%s' % (c.name, c.value)
+                        domain = '.' + compat_urlparse.urlparse(err.geturl()).netloc.replace('www.', '')
+                        self._set_cookie(domain, 'cf_clearance', tokens[0]['cf_clearance'])
+                        self._set_cookie(domain, '__cfduid', tokens[0]['__cfduid'])
+                        if not isinstance(url_or_request, compat_urllib_request.Request):
+                            url_or_request = sanitized_Request(url_or_request, data, {'Cookie': cookie})
+                        else:
+                            url_or_request = update_Request(url_or_request, headers={'Cookie': cookie})
+                        self.to_screen('Re-downloading webpage after CloudFlare challenge solve attempt.')
+                        try:
+                            return self._downloader.urlopen(url_or_request)
+                        except (compat_urllib_error.URLError, compat_http_client.HTTPException, socket.error) as new_err:
+                            # Ok, an error still persists after a solve attempt. Continue to the rest of the error
+                            # handling logic with the new error.
+                            err = new_err
+
             if isinstance(err, compat_urllib_error.HTTPError):
                 if self.__can_accept_status_code(err, expected_status):
                     # Retain reference to error to prevent file object from
