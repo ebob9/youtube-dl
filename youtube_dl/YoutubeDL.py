@@ -2402,6 +2402,8 @@ class YoutubeDL(object):
         # (See https://github.com/ytdl-org/youtube-dl/issues/1309 for details)
         opener.addheaders = []
         self._opener = opener
+        for testh in opener.handlers:
+            print(f"handler {testh}:  {testh._context.options if hasattr(testh, '_context') and testh._context is not None else 'noattr'}")
 
     def encode(self, s):
         if isinstance(s, bytes):
