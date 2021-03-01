@@ -929,8 +929,4 @@ def parseOpts(overrideArguments=None):
                     ('Command-line args', command_line_conf)):
                 write_string('[debug] %s: %s\n' % (conf_label, repr(_hide_login_info(conf))))
 
-    # check for multiple mutually exclusive arguments min_tls
-    if [opts.tls_1_1, opts.tls_1_2, opts.tls_1_3].count(True) > 1:
-        parser.error("options --tls-1-1, --tls-1-2, and --tls-1-3 are mutually exclusive")
-
     return parser, opts, args

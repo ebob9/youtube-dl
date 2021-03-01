@@ -314,6 +314,10 @@ def _real_main(argv=None):
         None if opts.match_filter is None
         else match_filter_func(opts.match_filter))
 
+    # check for multiple mutually exclusive arguments min_tls
+    if [opts.tls_1_1, opts.tls_1_2, opts.tls_1_3].count(True) > 1:
+        parser.error("options --tls-1-1, --tls-1-2, and --tls-1-3 are mutually exclusive")
+
     ydl_opts = {
         'usenetrc': opts.usenetrc,
         'username': opts.username,
@@ -399,6 +403,9 @@ def _real_main(argv=None):
         'cookiefile': opts.cookiefile,
         'nocheckcertificate': opts.no_check_certificate,
         'prefer_insecure': opts.prefer_insecure,
+        'tls_1_1': opts.tls_1_1,
+        'tls_1_2': opts.tls_1_2,
+        'tls_1_3': opts.tls_1_3,
         'proxy': opts.proxy,
         'socket_timeout': opts.socket_timeout,
         'bidi_workaround': opts.bidi_workaround,
