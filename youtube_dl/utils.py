@@ -2324,6 +2324,7 @@ def make_HTTPS_handler(params, **kwargs):
             context.minimum_version = ssl.TLSVersion.TLSv1_3
             context.maximum_version = ssl.TLSVersion.TLSv1_3
 
+        print(f"Options: {repr(context.options)}")
         try:
             return YoutubeDLHTTPSHandler(params, context=context, **kwargs)
         except TypeError:
