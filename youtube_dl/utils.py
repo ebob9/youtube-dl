@@ -2303,12 +2303,21 @@ def make_HTTPS_handler(params, **kwargs):
             context.verify_mode = ssl.CERT_NONE
         # set minimum TLS version, otherwise use default context version.
         if opts_tls_1_1:
+            # Older SSL libs
+            context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_2 | ssl.OP_NO_TLSv1_3
+            # Newer SSL Libs
             context.minimum_version = ssl.TLSVersion.TLSv1_1
             context.maximum_version = ssl.TLSVersion.TLSv1_1
         elif opts_tls_1_2:
+            # Older SSL Libs
+            context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_3
+            # Newer SSL Libs
             context.minimum_version = ssl.TLSVersion.TLSv1_2
             context.maximum_version = ssl.TLSVersion.TLSv1_2
         elif opts_tls_1_3:
+            # Older SSL Libs
+            context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2
+            # newer SSL Libs
             context.minimum_version = ssl.TLSVersion.TLSv1_3
             context.maximum_version = ssl.TLSVersion.TLSv1_3
 
